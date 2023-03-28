@@ -1,10 +1,15 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { BrowserRouter as Router, Link, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
+import Home from './Home';
+import Navbar from './Navbar';
+import Page404 from './Page404';
+import Login from './Login';
 import { fetchPosts } from '../actions/posts';
-import { PostsList, Navbar } from './';
-import propTypes from 'prop-types';
+
+const Signup = () => <div>Signup</div>;
 
 class App extends React.Component {
   componentDidMount() {
@@ -15,8 +20,15 @@ class App extends React.Component {
     const { posts } = this.props;
     return (
       <div>
-        <Navbar />
-        <PostsList posts={posts} />
+        <Router>
+          <Navbar />
+          <Routes>
+            <Route exact path="/" element={<Home posts={posts} />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="*" element={<Page404 />} />
+          </Routes>
+        </Router>
       </div>
     );
   }
@@ -29,6 +41,7 @@ function mapStateToProps(state) {
 }
 
 App.propTypes = {
-  posts: propTypes.array.isRequired,
+  posts: PropTypes.array.isRequired,
 };
+
 export default connect(mapStateToProps)(App);
