@@ -1,42 +1,109 @@
-import React from 'react';
+import React, { Children, useEffect } from 'react';
 import { connect } from 'react-redux';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { Navigate } from 'react-router-dom';
 
-import Home from './Home';
-import Navbar from './Navbar';
-import Page404 from './Page404';
-import Login from './Login';
 import { fetchPosts } from '../actions/posts';
+import {
+  Home,
+  Navbar,
+  Page404,
+  Login,
+  Signup,
+  Settings,
+  UserProfile,
+} from './';
+import jwt from 'jwt-decode';
+import { authenticateUser } from '../actions/auth';
+import { getAuthTokenFromLocalStorage } from '../helpers/utils';
 
-const Signup = () => <div>Signup</div>;
+const PrivateRoute = (privateRouteProps) => {
+  //change location to path we are sending path not location
+  const { isLoggedin, children, path } = privateRouteProps;
+  return isLoggedin ? children : <Navigate to="/login" state={path}></Navigate>;
+};
 
-class App extends React.Component {
-  componentDidMount() {
-    this.props.dispatch(fetchPosts());
-  }
+function App(props) {
+  console.log('this.props', props);
 
-  render() {
-    const { posts } = this.props;
-    return (
-      <div>
-        <Router>
-          <Navbar />
-          <Routes>
-            <Route exact path="/" element={<Home posts={posts} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="*" element={<Page404 />} />
-          </Routes>
-        </Router>
-      </div>
-    );
-  }
+  const { posts, auth } = props;
+  const location = useLocation();
+  console.log('location', location);
+  useEffect(() => {
+    props.dispatch(fetchPosts());
+    console.log('component props', props);
+    // const token = localStorage.getItem('token');
+    const token = getAuthTokenFromLocalStorage();
+    if (token) {
+      const user = jwt(token);
+
+      // console.log('user', user);
+      props.dispatch(
+        authenticateUser({
+          email: user.email,
+          _id: user._id,
+          name: user.name,
+        })
+      );
+    }
+  }, []);
+
+  return (
+    // <Router>
+    <div>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home posts={posts} />} />
+        {/* no need to render props can pass it to element directly as it gets automatically rendered */}
+        {/* //something passed to home for that only props is there */}
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/signup" element={<Signup />} />
+
+        <Route
+          exact
+          path="/settings"
+          element={
+            <PrivateRoute
+              isLoggedin={auth.isLoggedin}
+              path={window.location.pathname}
+            >
+              {' '}
+              <Settings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          exact
+          path="/user/:userId"
+          element={
+            <PrivateRoute
+              isLoggedin={auth.isLoggedin}
+              path={window.location.pathname}
+            >
+              <UserProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route path="*" element={<Page404 />} />
+      </Routes>
+    </div>
+
+    //      </Router>
+  );
 }
 
 function mapStateToProps(state) {
   return {
     posts: state.posts,
+    auth: state.auth,
   };
 }
 

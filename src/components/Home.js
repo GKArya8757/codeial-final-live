@@ -1,15 +1,26 @@
 import React, { Component } from 'react';
-import PostsList from './PostsList';
+import { connect } from 'react-redux';
+
+import { PostsList, FriendsList, Chat } from './';
 
 class Home extends Component {
   render() {
-    const { posts } = this.props;
+    console.log(this.props);
+    const { posts, friends, isLoggedin } = this.props;
     return (
       <div className="home">
         <PostsList posts={posts} />
+        {isLoggedin && <FriendsList friends={friends} key={friends._id} />}
+        {isLoggedin && <Chat />}
       </div>
     );
   }
 }
 
-export default Home;
+const mapStateToProps = (state) => {
+  return {
+    isLoggedin: state.auth.isLoggedin,
+    friends: state.friends,
+  };
+};
+export default connect(mapStateToProps)(Home);
